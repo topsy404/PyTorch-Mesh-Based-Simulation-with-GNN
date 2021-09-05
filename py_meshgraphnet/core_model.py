@@ -8,6 +8,7 @@ import functools
 
 import torch
 from torch import nn
+from torch_scatter import scatter
 
 EdgeSet = collections.namedtuple("EdgeSet", ["name", "features", "senders", "receivers"])
 
@@ -45,6 +46,11 @@ class MLP(nn.Module):
             self._networks.append(nn.LayerNorm(output_size))
 
     def forward(self, features):
+        """
+
+        :param features: shape: #nodes, ?
+        :return:
+        """
         input_size = features.shape[-1]
         self._networks = [nn.Linear(input_size, self._latent_size), nn.ReLU()] + self._networks
         self._mlp = nn.Sequential(*self._networks)
@@ -63,6 +69,23 @@ class GraphNetBlock(nn.Module):
         edge_features =  torch.cat(features_lst, dim = -1)
         return self._model_fn()(edge_features)
 
+    def _update_node_features(self, node_features, edge_sets):
+        """
+
+        :param node_features:
+        :param edge_set:
+        :return:
+        """
+        num_nodes = node_features.shape[0]
+        features = [node_features]
+        for edge_set in edge_sets:
+            edge_set_features = edge_set.features
+            edge_set_receivers = edge_set.receivers
+            seg_sum = torch.zeros((num_nodes, edge_set_features.shape[-1]))
+            scatter(edge_set_features, edge_set_receivers, 0, seg_sum)
+            features.append(seg_sum)
+        return self._model_fn()(torch.cat(features, dim = -1))
+
     def forward(self, graph):
         """
         Replicate from _build
@@ -70,8 +93,22 @@ class GraphNetBlock(nn.Module):
         :param graph:
         :return:
         """
-        pass
+        # apply edge functions
+        new_edge_sets = []
+        for edge_set in graph.edge_sets:
+            updated_features = self._update_edge_features(graph.node_features,
+                                                          edge_set)
+            new_edge_sets.append(edge_set._replace(features=updated_features))
 
+        # apply node function
+        new_node_features = self._update_node_features(graph.node_features,
+                                                       new_edge_sets)
+
+        # add residual connections
+        new_node_features += graph.node_features
+        new_edge_sets = [es._replace(features=es.features + old_es.features)
+                         for es, old_es in zip(new_edge_sets, graph.edge_sets)]
+        return MultiGraph(new_node_features, new_edge_sets)
 
 class EncoderProcessDecode(nn.Module):
     def __init__(self,
