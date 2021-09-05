@@ -3,7 +3,6 @@
 # Author: topsy 
 # Data: 2021/9/4 4:43 pm
 
-
 import torch
 from torch import nn
 import numpy as np
@@ -24,9 +23,6 @@ class Model(torch.nn.Module):
             size=3 + common.NodeType.SIZE, name='node_normalizer')
         self._edge_normalizer = normalization.Normalizer(
             size=7, name='edge_normalizer')  # 2D coord + 3D coord + 2*length = 7
-
-    def _node_normalizer(self, node_features, is_training):
-        return torch.norm(node_features, dim=-1, keepdim=True)
 
     def _build_graph(self, inputs, is_training):
         """
