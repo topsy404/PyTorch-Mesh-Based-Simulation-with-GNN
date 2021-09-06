@@ -146,7 +146,6 @@ class EncoderProcessDecode(nn.Module):
     def _encoder(self, graph):
         node_latents = self._make_mlp(self._latent_size)(graph.node_features)
         new_edges_sets = []
-        pdb.set_trace()
         for edge_set in graph.edge_sets:
             latent = self._make_mlp(self._latent_size)(edge_set.features)
             new_edges_sets.append(edge_set._replace(features=latent))
@@ -165,7 +164,6 @@ class EncoderProcessDecode(nn.Module):
         """
         model_fn = functools.partial(self._make_mlp, output_size=self._latent_size)
         latent_graph = self._encoder(graph)
-        pdb.set_trace()
         for _ in range(self._message_passing_steps):
             latent_graph = GraphNetBlock(model_fn)(latent_graph)
         return self._decoder(latent_graph)

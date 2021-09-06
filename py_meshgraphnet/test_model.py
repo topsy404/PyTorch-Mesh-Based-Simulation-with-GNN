@@ -68,7 +68,7 @@ inputs["node_type"] = inputs["node_type"].to(torch.int64)
 
 print("inputs: ", inputs)
 test_cloth_model_output = test_cloth_model.forward(inputs)
-print("test_cloth_model_output: ", test_cloth_model_output.shape)
+print("test_cloth_model_output: ", test_cloth_model_output)
 
 
 """

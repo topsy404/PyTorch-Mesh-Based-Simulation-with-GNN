@@ -44,7 +44,7 @@ class Normalizer(torch.nn.Module):
         squared_data_sum = torch.sum(batched_data ** 2, dim = 0)
         self._acc_sum += data_sum
         self._acc_sum_squared += squared_data_sum
-        pdb.set_trace()
+
         self._acc_count += count
         self._num_accumulations += 1
 

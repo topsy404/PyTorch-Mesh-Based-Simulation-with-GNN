@@ -65,10 +65,10 @@ class Model(torch.nn.Module):
                                        receivers=receivers,
                                        senders=senders)
         # todo: implement the custom normalization method
-        pdb.set_trace()
+
         node_features = self._node_normalizer(node_features, is_training)
         edge_sets = [mesh_edge]
-        pdb.set_trace()
+
         return core_model.MultiGraph(node_features=node_features,
                                      edge_sets=edge_sets)
 
@@ -110,5 +110,5 @@ class Model(torch.nn.Module):
         """
         graph = self._build_graph(inputs, is_training=True)
         per_node_network_output = self._learned_model(graph)
-        pdb.set_trace()
+
         return self._update(inputs, per_node_network_output)
