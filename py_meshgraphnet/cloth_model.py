@@ -7,14 +7,14 @@ import torch
 from torch import nn
 import numpy as np
 
-from py_meshgraphnet import common
-from py_meshgraphnet import core_model
-from py_meshgraphnet import normalization
-
+import common
+import core_model
+import normalization
+import pdb
 
 class Model(torch.nn.Module):
     def __init__(self, learned_model, name='Model'):
-        super(Model, self).__init__(name=name)
+        super(Model, self).__init__()
         self._learned_model = learned_model
         self._learned_model = learned_model  # learned_model = core_model.EncodeProcessDecode
         self._output_normalizer = normalization.Normalizer(
@@ -43,27 +43,32 @@ class Model(torch.nn.Module):
         # inputs["world_pos"] = np.random.randn(1579, 3)
         # inputs["prev|world_pos "] = np.random.randn(1579, 3)
         # inputs["target|world_pos"] = np.random.randn(1579, 3)
-        velocity = inputs["world_pos"] - inputs["prev|word_pos"]  # shape: #nodes, 3
-        node_type = torch.nn.functional.one_hot(inputs["node_type"],
+        velocity = inputs["world_pos"] - inputs["prev|world_pos"]  # shape: #nodes, 3
+        node_type = torch.nn.functional.one_hot(torch.squeeze(inputs["node_type"]),
                                                 num_classes=common.NodeType.SIZE)  # shape: #nodes, SIZE
-        node_features = torch.cat([velocity, node_type], dim=-1)
+        node_features = torch.cat([velocity, node_type], dim=-1) # 3 + 9
         senders, receivers = common.triangles_to_edges(inputs["cells"])
-        relative_world_pos = torch.gather(inputs["world_pos"], dim=0, index=senders) - \
-                             torch.gather(inputs["world_pos"], dim=0, index=receivers)
-        relative_mesh_pos = torch.gather(inputs["mesh_pos"], dim=0, index=senders) - \
-                            torch.gather(inputs["mesh_pos"], dim=0, index=receivers)
+
+        num_of_dims_of_world_pos = inputs["world_pos"].shape[-1]
+        num_of_dims_of_mesh_pos = inputs["mesh_pos"].shape[-1]
+        relative_world_pos = torch.gather(inputs["world_pos"], dim=0, index=senders.unsqueeze(-1).repeat(1,num_of_dims_of_world_pos)) - \
+                             torch.gather(inputs["world_pos"], dim=0, index=receivers.unsqueeze(-1).repeat(1,num_of_dims_of_world_pos))
+        relative_mesh_pos = torch.gather(inputs["mesh_pos"], dim=0, index=senders.unsqueeze(-1).repeat(1,num_of_dims_of_mesh_pos)) - \
+                            torch.gather(inputs["mesh_pos"], dim=0, index=receivers.unsqueeze(-1).repeat(1,num_of_dims_of_mesh_pos))
         edge_features = torch.cat([relative_world_pos,
                                    torch.norm(relative_world_pos, dim=-1, keepdim=True),
                                    relative_mesh_pos,
                                    torch.norm(relative_mesh_pos, dim=-1, keepdim=True),
-                                   ])
+                                   ], dim = -1 )
         mesh_edge = core_model.EdgeSet(name="mesh_edges",
                                        features=edge_features,
                                        receivers=receivers,
                                        senders=senders)
         # todo: implement the custom normalization method
+        pdb.set_trace()
         node_features = self._node_normalizer(node_features, is_training)
         edge_sets = [mesh_edge]
+        pdb.set_trace()
         return core_model.MultiGraph(node_features=node_features,
                                      edge_sets=edge_sets)
 
@@ -105,4 +110,5 @@ class Model(torch.nn.Module):
         """
         graph = self._build_graph(inputs, is_training=True)
         per_node_network_output = self._learned_model(graph)
+        pdb.set_trace()
         return self._update(inputs, per_node_network_output)

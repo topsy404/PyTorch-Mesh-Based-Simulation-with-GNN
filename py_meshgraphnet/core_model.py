@@ -5,6 +5,7 @@
 
 import collections
 import functools
+import pdb
 
 import torch
 from torch import nn
@@ -53,7 +54,9 @@ class MLP(nn.Module):
         """
         input_size = features.shape[-1]
         self._networks = [nn.Linear(input_size, self._latent_size), nn.ReLU()] + self._networks
+        #pdb.set_trace()
         self._mlp = nn.Sequential(*self._networks)
+        #pdb.set_trace()
         return self._mlp(features)
 
 
@@ -63,10 +66,13 @@ class GraphNetBlock(nn.Module):
         self._model_fn = model_fn
 
     def _update_edge_features(self, node_features, edge_set):
-        sender_features = torch.gather(node_features, dim = 0, index = edge_set.senders)  # index should be a torch.Tensor with type int64
-        receiver_features = torch.gather(node_features, dim = 0, index = edge_set.receivers)
+        num_of_dims_of_features =  node_features.shape[-1]
+        sender_features = torch.gather(node_features, dim=0,
+                                       index=edge_set.senders.unsqueeze(-1).repeat(1, num_of_dims_of_features)
+)  # index should be a torch.Tensor with type int64
+        receiver_features = torch.gather(node_features, dim=0, index=edge_set.receivers.unsqueeze(-1).repeat(1, num_of_dims_of_features))
         features_lst = [sender_features, receiver_features, edge_set.features]
-        edge_features =  torch.cat(features_lst, dim = -1)
+        edge_features = torch.cat(features_lst, dim=-1)
         return self._model_fn()(edge_features)
 
     def _update_node_features(self, node_features, edge_sets):
@@ -84,7 +90,7 @@ class GraphNetBlock(nn.Module):
             seg_sum = torch.zeros((num_nodes, edge_set_features.shape[-1]))
             scatter(edge_set_features, edge_set_receivers, 0, seg_sum)
             features.append(seg_sum)
-        return self._model_fn()(torch.cat(features, dim = -1))
+        return self._model_fn()(torch.cat(features, dim=-1))
 
     def forward(self, graph):
         """
@@ -110,6 +116,7 @@ class GraphNetBlock(nn.Module):
                          for es, old_es in zip(new_edge_sets, graph.edge_sets)]
         return MultiGraph(new_node_features, new_edge_sets)
 
+
 class EncoderProcessDecode(nn.Module):
     def __init__(self,
                  output_size,
@@ -125,7 +132,7 @@ class EncoderProcessDecode(nn.Module):
         :param message_passing_steps:
         :param name:
         """
-        super(EncoderProcessDecode, self).__init__(name=name)
+        super(EncoderProcessDecode, self).__init__()
         self._latent_size = latent_size
         self._output_size = output_size
         self._num_layers = num_layers
@@ -133,12 +140,13 @@ class EncoderProcessDecode(nn.Module):
 
     def _make_mlp(self, output_size, layer_norm=True):
         # build an MLP
-        network = MLP(output_size, self._latent_size, self._num_layers, layer_norm)
+        network = MLP(self._latent_size, self._num_layers, output_size, layer_norm)
         return network
 
     def _encoder(self, graph):
         node_latents = self._make_mlp(self._latent_size)(graph.node_features)
         new_edges_sets = []
+        pdb.set_trace()
         for edge_set in graph.edge_sets:
             latent = self._make_mlp(self._latent_size)(edge_set.features)
             new_edges_sets.append(edge_set._replace(features=latent))
@@ -157,6 +165,7 @@ class EncoderProcessDecode(nn.Module):
         """
         model_fn = functools.partial(self._make_mlp, output_size=self._latent_size)
         latent_graph = self._encoder(graph)
+        pdb.set_trace()
         for _ in range(self._message_passing_steps):
             latent_graph = GraphNetBlock(model_fn)(latent_graph)
         return self._decoder(latent_graph)

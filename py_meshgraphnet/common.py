@@ -45,3 +45,11 @@ def triangles_to_edges(faces):
 # senders, receivers  = triangles_to_edges(faces)
 # print(senders, receivers )
 
+def grather_index_from_tf(index, num_of_dims):
+    """
+
+    :param index:
+    :param num_of_dims:
+    :return:
+    """
+    return index.unsqueeze(-1).repeat(1, num_of_dims)
