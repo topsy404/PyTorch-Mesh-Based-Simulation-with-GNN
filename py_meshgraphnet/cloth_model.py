@@ -80,16 +80,14 @@ class Model(torch.nn.Module):
         """
         graph = self._build_graph(inputs, is_training=True)
         network_output = self._learned_model(graph)
-
         # build target acceleration
         cur_position = inputs["world_pos"]
         prev_position = inputs["prev|world_pos"]
         target_position = inputs["target|world_pos"]
         target_acceleration = target_position - 2 * cur_position + prev_position
         target_normalized = self._output_normalizer(target_acceleration)
-
         # build loss
-        loss_mask = torch.equal(inputs["node_type"][:, 0], torch.tensor(common.NodeType.NORMAL))
+        loss_mask = torch.eq(inputs["node_type"][:, 0], torch.full( inputs["node_type"][:, 0].shape, common.NodeType.NORMAL))
         error = torch.sum((target_normalized - network_output) ** 2, dim=1)
         loss = torch.mean(error[loss_mask])
         return loss
