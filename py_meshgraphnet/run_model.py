@@ -14,6 +14,7 @@ import torch
 import dataset
 import cloth_model
 import core_model
+import cloth_eval
 
 import pdb
 
@@ -51,10 +52,9 @@ def learner(model, params):
     # for e in model.parameters():
     #     print(e.shape)
     my_optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
-
     my_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=my_optimizer, gamma=0.1)
     num_epoches = 20000
-    dataloder = dataset.get_dataloader()
+    dataloder = dataset.get_dataloader("train")
     for epoch in range(num_epoches):
         for index, batched_data in enumerate(dataloder):
 
@@ -79,10 +79,28 @@ def learner(model, params):
             print("#epoch: {}; loss: {}".format(epoch, loss) )
 
 
+def evaluator(model, params):
+    """
+    load data, load model parameters, go through model,
+    :param model:
+    :param params:
+    :return:
+    """
+    dataloder = dataset.get_dataloader("test")
+    cur_path = os.getcwd()
+    model_pt_path = os.path.join(cur_path, "py_meshgraphnet" , "train_epoch_1.pt")
+    model.load_state_dict(torch.load(model_pt_path))
+    for index, batched_data in enumerate(dataloder):
+        inputs = {}
+        for key, val in batched_data.items():
+            inputs[key] = torch.squeeze(val, dim = 0)
+        cloth_eval.evaluate(model, inputs)
 
 
 
+import os
 def main(argv):
+
     params = PARAMETERS["cloth"]  #
     learned_model = core_model.EncoderProcessDecode(
         output_size=params['size'],  # 3
@@ -90,7 +108,12 @@ def main(argv):
         num_layers=2,
         message_passing_steps=15)
     model = params['model'].Model(learned_model)
-    learner(model, params)
+    if 0:
+        #train model
+        learner(model, params)
+    elif 1:
+        #eval model
+        evaluator(model, params)
 
 if __name__ == "__main__":
     app.run(main)

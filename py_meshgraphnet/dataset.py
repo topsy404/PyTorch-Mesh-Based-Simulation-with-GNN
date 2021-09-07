@@ -34,15 +34,20 @@ class ClothDataset(Dataset):
 """
 iterating through the dataset
 """
-clothdataset = ClothDataset( pkl_file_name="train10.pkl",
-                             root_dir="/home/topsy/Documents/projects/PyTorch-Mesh-Based-Simulation-with-GNN/py_meshgraphnet/dataset",)
-
 
 # for i in range(len(clothdataset)):
 #     sample = clothdataset[i]
 #     print("i: {}, cells shape: {}".format(i, sample["cells"].shape))
 
-def get_dataloader():
+def get_dataloader(split = "train"):
+    if split == "train":
+        clothdataset = ClothDataset( pkl_file_name="train10.pkl",
+                                     root_dir="/home/topsy/Documents/projects/PyTorch-Mesh-Based-Simulation-with-GNN/py_meshgraphnet/dataset")
+    elif split == "test":
+        clothdataset = ClothDataset( pkl_file_name="test10.pkl",
+                                     root_dir="/home/topsy/Documents/projects/PyTorch-Mesh-Based-Simulation-with-GNN/py_meshgraphnet/dataset")
+    else:
+        print("split must be one of the train, test or valid")
     dataloder = DataLoader(clothdataset, batch_size=1, shuffle=True, num_workers=2)
     return dataloder
 
