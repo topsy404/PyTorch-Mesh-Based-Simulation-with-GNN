@@ -68,7 +68,6 @@ def learner(model, params):
             loss = model.loss(inputs)
             if index % 10 == 0:
                 print("index {}, loss: {}".format(index, loss))
-
             loss.backward()
             my_optimizer.step()
         my_lr_scheduler.step()
