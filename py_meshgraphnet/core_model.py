@@ -10,7 +10,6 @@ import pdb
 import torch
 from torch import nn
 
-
 EdgeSet = collections.namedtuple("EdgeSet", ["name", "features", "senders", "receivers"])
 
 MultiGraph = collections.namedtuple("Grahp", ["node_features", "edge_sets"])
@@ -63,8 +62,8 @@ class MLP(nn.Module):
 class GraphNetBlock(nn.Module):
     def __init__(self, edge_features_size, node_feature_size, latent_size, num_layers, output_size, layer_norm=True):
         super(GraphNetBlock, self).__init__()
-        self._edge_encoder = MLP(edge_features_size, latent_size, num_layers, output_size, layer_norm)
-        self._node_encoder = MLP(node_feature_size, latent_size, num_layers, output_size, layer_norm)
+        self._edge_encoder = MLP(edge_features_size, latent_size, num_layers, output_size, layer_norm).cuda()
+        self._node_encoder = MLP(node_feature_size, latent_size, num_layers, output_size, layer_norm).cuda()
 
     def _update_edge_features(self, node_features, edge_set):
         num_of_dims_of_features = node_features.shape[-1]
@@ -145,25 +144,25 @@ class EncoderProcessDecode(nn.Module):
         self._node_encoder_net = MLP(input_size=12,
                                      latent_size=128,
                                      num_layers=2,
-                                     output_size=128)
+                                     output_size=128).cuda()
         self._edge_encoder_net = MLP(input_size=7,
                                      latent_size=128,
                                      num_layers=2,
-                                     output_size=128)
+                                     output_size=128).cuda()
         self._node_decoder_net = MLP(input_size=128,
                                      latent_size=128,
                                      num_layers=2,
-                                     output_size=output_size)
+                                     output_size=output_size).cuda()
         self._edge_decoder_net = MLP(input_size=128,
                                      latent_size=128,
                                      num_layers=2,
-                                     output_size=output_size)
+                                     output_size=output_size).cuda()
         self._process_net_lst = []
         for step in range(self._message_passing_steps):
             self._process_net_lst.append(
                 GraphNetBlock(edge_features_size=128 * 3, node_feature_size=128 * 2, latent_size=latent_size,
                               num_layers=num_layers, output_size=128))
-        self._process_net = nn.Sequential(*self._process_net_lst)
+        self._process_net = nn.Sequential(*self._process_net_lst).cuda()
 
     def _make_mlp(self, input_size, output_size, layer_norm=True):
         # build an MLP

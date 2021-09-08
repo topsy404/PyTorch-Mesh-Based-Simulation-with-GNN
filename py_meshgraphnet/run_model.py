@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # Author: topsy 
-# Data: 2021/9/6 下午4:05
+# Data: 2021/9/6 ä¸ĺ4:05
 
 
 import pickle
@@ -17,6 +17,13 @@ import core_model
 import cloth_eval
 
 import pdb
+
+from torch.multiprocessing import Pool, Process, set_start_method
+try:
+     set_start_method('spawn')
+except RuntimeError:
+    pass
+
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum('mode', 'train', ['train', 'eval'],
@@ -108,10 +115,10 @@ def main(argv):
         num_layers=2,
         message_passing_steps=15)
     model = params['model'].Model(learned_model)
-    if 0:
+    if 1:
         #train model
         learner(model, params)
-    elif 1:
+    elif 0:
         #eval model
         evaluator(model, params)
 

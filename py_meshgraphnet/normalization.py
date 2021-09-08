@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # Author: topsy 
-# Data: 2021/9/4 下午7:10
+# Data: 2021/9/4 ä¸ĺ7:10
 import pdb
 
 import torch
@@ -15,12 +15,12 @@ class Normalizer(torch.nn.Module):
                  name="Normalizer"
                  ):
         super(Normalizer, self).__init__()
-        self._max_accumulations = torch.tensor(max_accumulations, dtype = torch.float32)
-        self._std_epsilon = torch.tensor(std_epsilon, dtype = torch.float32)
-        self._acc_count = torch.tensor(0, dtype=torch.float32)
-        self._num_accumulations = torch.tensor(0, dtype=torch.float32)
-        self._acc_sum = torch.zeros(size, dtype=torch.float32)
-        self._acc_sum_squared = torch.zeros(size, dtype=torch.float32)
+        self._max_accumulations = torch.tensor(max_accumulations, dtype = torch.float32).cuda()
+        self._std_epsilon = torch.tensor(std_epsilon, dtype = torch.float32).cuda()
+        self._acc_count = torch.tensor(0, dtype=torch.float32).cuda()
+        self._num_accumulations = torch.tensor(0, dtype=torch.float32).cuda()
+        self._acc_sum = torch.zeros(size, dtype=torch.float32).cuda()
+        self._acc_sum_squared = torch.zeros(size, dtype=torch.float32).cuda()
 
 
     def forward(self, batched_data, accumulate = True):
@@ -39,7 +39,7 @@ class Normalizer(torch.nn.Module):
         :return:
         """
         #todo: is reasonable that the count is equal to the number of nodes?
-        count = torch.tensor(batched_data.shape[0], dtype=torch.float32)
+        count = torch.tensor(batched_data.shape[0], dtype=torch.float32).cuda()
         data_sum = torch.sum(batched_data, dim = 0)
         squared_data_sum = torch.sum(batched_data ** 2, dim = 0)
         self._acc_sum += data_sum
@@ -49,11 +49,11 @@ class Normalizer(torch.nn.Module):
         self._num_accumulations += 1
 
     def _mean(self):
-        safe_count = torch.maximum(self._acc_count, torch.tensor(1.0))
+        safe_count = torch.maximum(self._acc_count, torch.tensor(1.0).cuda())
         return self._acc_sum / safe_count
 
     def _std_with_epsilon(self):
-        safe_count = torch.maximum(self._acc_count, torch.tensor(1.0))
+        safe_count = torch.maximum(self._acc_count, torch.tensor(1.0).cuda())
         std = torch.sqrt(self._acc_sum_squared / safe_count - self._mean()  ** 2)
         return torch.maximum(std, self._std_epsilon)
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # Author: topsy 
-# Data: 2021/9/6 下午4:13
+# Data: 2021/9/6 ä¸ĺ4:13
 
 
 import torch
@@ -25,9 +25,9 @@ class ClothDataset(Dataset):
         item = {}
         for key, val in self._data.items():
             if key in ["cells", "node_type"]:
-                item[key] = torch.tensor(val[idx], dtype=torch.int64)
+                item[key] = torch.tensor(val[idx], dtype=torch.int64).cuda()
             else:
-                item[key] = torch.tensor(val[idx], dtype=torch.float32)
+                item[key] = torch.tensor(val[idx], dtype=torch.float32).cuda()
         return item
 
 
@@ -42,7 +42,7 @@ iterating through the dataset
 def get_dataloader(split = "train"):
     if split == "train":
         clothdataset = ClothDataset( pkl_file_name="train10.pkl",
-                                     root_dir="/home/topsy/Documents/projects/PyTorch-Mesh-Based-Simulation-with-GNN/py_meshgraphnet/dataset")
+                                     root_dir="/content/drive/My Drive/projects/gnn-mesh-cloth/")
     elif split == "test":
         clothdataset = ClothDataset( pkl_file_name="test10.pkl",
                                      root_dir="/home/topsy/Documents/projects/PyTorch-Mesh-Based-Simulation-with-GNN/py_meshgraphnet/dataset")

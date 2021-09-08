@@ -28,7 +28,7 @@ class Model(torch.nn.Module):
         """
         :param inputs:
             key:  cells ;  shape:  (3028, 3)
-            key:  mesh_pos ;  shape:  (1579, 2)　＃relative position
+            key:  mesh_pos ;  shape:  (1579, 2)ã€€ï¼ƒrelative position
             key:  node_type ;  shape:  (1579, 1) # fixed or not
             key:  world_pos ;  shape:  (1579, 3)
             key:  prev|world_pos ;  shape:  (1579, 3)
@@ -87,7 +87,7 @@ class Model(torch.nn.Module):
         target_acceleration = target_position - 2 * cur_position + prev_position
         target_normalized = self._output_normalizer(target_acceleration)
         # build loss
-        loss_mask = torch.eq(inputs["node_type"][:, 0], torch.full( inputs["node_type"][:, 0].shape, common.NodeType.NORMAL))
+        loss_mask = torch.eq(inputs["node_type"][:, 0], torch.full( inputs["node_type"][:, 0].shape, common.NodeType.NORMAL).cuda())
         error = torch.sum((target_normalized - network_output) ** 2, dim=1)
         loss = torch.mean(error[loss_mask])
         return loss
